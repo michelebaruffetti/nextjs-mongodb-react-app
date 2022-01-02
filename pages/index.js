@@ -1,43 +1,43 @@
 import MeetupList from "../components/meetups/MeetupList";
-
-const fakemeet = [
-  {
-    id: 1,
-    title: "first meetup",
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Prague_Skyline.jpg/1920px-Prague_Skyline.jpg",
-    address: "fake address, 15",
-    description: "fake meetup description",
-  },
-  {
-    id: 2,
-    title: "first meetup",
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Prague_Skyline.jpg/1920px-Prague_Skyline.jpg",
-    address: "fake address, 234",
-    description: "fake meetup description 2",
-  },
-  {
-    id: 3,
-    title: "first meetup",
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Prague_Skyline.jpg/1920px-Prague_Skyline.jpg",
-    address: "fake address, 19",
-    description: "fake meetup description 3",
-  },
-];
+import { MongoClient } from "mongodb";
+import Head from "next/head";
+import { Fragment } from "react";
 
 const HomePage = (props) => {
-  return <MeetupList meetups={props.meetups} />;
+  return (
+    <Fragment>
+      <Head>
+        <title>Nextjs - React - MongoDb Test Meetup</title>
+        <meta
+          name="description"
+          content="A test app using nextjs, react, mongodb"
+        />
+      </Head>
+      <MeetupList meetups={props.meetups} />
+    </Fragment>
+  );
 };
 
 export async function getStaticProps() {
   //fetch data from api or other and regenerate by revalidate
   // alterantively getServerSideProps for rendering every request, can use context to accesss req and res
 
+  const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.pxoio.mongodb.net/meetups?retryWrites=true&w=majority`;
+
+  const client = await MongoClient.connect(uri);
+  const collection = client.db("meetups").collection("meetups");
+  const meetups = await collection.find().toArray();
+  client.close();
+
   return {
     props: {
-      meetups: fakemeet,
+      meetups: meetups.map((el) => ({
+        id: el._id.toString(),
+        title: el.title,
+        description: el.description,
+        image: el.image,
+        address: el.address,
+      })),
     },
     revalidate: 10,
   };
